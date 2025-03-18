@@ -13,7 +13,7 @@
    cd ../docker
    cp middleware.env.example middleware.env
    # change the profile to other vector database if you are not using weaviate
-   docker compose -f docker-compose.middleware.yaml --profile weaviate -p dify up -d
+   docker compose -f docker-compose.middleware.yaml --profile weaviate -p dify_0_15_3 up -d
    cd ../api
    ```
 
@@ -60,7 +60,10 @@
    poetry run python -m flask run --host 0.0.0.0 --port=5001 --debug
    ```
 
-8. Start Dify [web](../web) service.
+8. Start Dify [web](../web) service.  
+   ```bash
+      docker compose -f docker-compose.web.yaml -p dify_0_15_3 up -d
+   ```
 9. Setup your application by visiting `http://localhost:3000`...
 10. If you need to handle and debug the async tasks (e.g. dataset importing and documents indexing), please start the worker service.
 

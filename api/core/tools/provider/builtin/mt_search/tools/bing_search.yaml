@@ -1,0 +1,27 @@
+identity:
+  name: bing_search
+  author: Hongtao Zhou
+  label:
+    en_US: BingSearch
+    zh_Hans: bing搜索
+    pt_BR: BingSearch
+description:
+  human:
+    en_US: A tool for performing a mt SERP search and extracting snippets and webpages.Input should be a search query.
+    zh_Hans: 一个用于执行联网搜索并提取结果片段的工具。输入应该是一个搜索查询。
+    pt_BR: A tool for performing a mt SERP search and extracting snippets and webpages.Input should be a search query.
+  llm: A tool for performing a mt SERP search and extracting snippets and webpages.Input should be a search query.
+parameters:
+  - name: query
+    type: string
+    required: true
+    label:
+      en_US: Query string
+      zh_Hans: 查询语句
+      pt_BR: Query string
+    human_description:
+      en_US: used for searching
+      zh_Hans: 用于搜索网页内容的问题
+      pt_BR: used for searching
+    llm_description: key words for searching
+    form: llm

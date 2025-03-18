@@ -1,0 +1,21 @@
+services:
+  # The postgres database.
+  web:
+#    image: langgenius/dify-web:0.15.3
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/langgenius/dify-web:0.15.3
+    restart: no
+    environment:
+      CONSOLE_API_URL: ${CONSOLE_API_URL:-http://127.0.0.1:5001}
+      APP_API_URL: ${APP_API_URL:-http://127.0.0.1:5001}
+      SENTRY_DSN: ${WEB_SENTRY_DSN:-}
+      NEXT_TELEMETRY_DISABLED: ${NEXT_TELEMETRY_DISABLED:-1}
+      TEXT_GENERATION_TIMEOUT_MS: ${TEXT_GENERATION_TIMEOUT_MS:-60000}
+      CSP_WHITELIST: ${CSP_WHITELIST:-}
+      TOP_K_MAX_VALUE: ${TOP_K_MAX_VALUE:-10}
+      INDEXING_MAX_SEGMENTATION_TOKENS_LENGTH: ${INDEXING_MAX_SEGMENTATION_TOKENS_LENGTH:-4000}
+    # uncomment to expose dify-web port to host
+    ports:
+      - "80:3000"
+#     network_mode: host
+    tty: true
+

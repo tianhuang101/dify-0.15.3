@@ -37,7 +37,7 @@ parameters:
       zh_Hans: 时区
       pt_BR: Timezone
     form: form
-    default: UTC
+    default: Asia/Shanghai
     options:
       - value: UTC
         label:
