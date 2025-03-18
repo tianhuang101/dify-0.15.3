@@ -37,7 +37,8 @@
 
 4. Create environment.
 
-   Dify API service uses [Poetry](https://python-poetry.org/docs/) to manage dependencies. You can execute `poetry shell` to activate the environment.
+   - 第一种方式：Dify API service uses [Poetry](https://python-poetry.org/docs/) to manage dependencies. You can execute `poetry shell` to activate the environment.
+   - 第二种方式：使用传统的virtualenv的方式创建虚拟环境，制定python路径为`/Users/zhouhongtao/Desktop/code/dify-0.15.3/api/venv` ,然后安装poetry `pip install poetry`
 
 5. Install dependencies
 
@@ -84,3 +85,13 @@
    ```bash
    poetry run -P api bash dev/pytest/pytest_all_tests.sh
    ```
+   
+## 本地debug方式
+配置如下：
+![img_1.png](img_1.png)
+
+其中：
+- 环境变量：PYTHONUNBUFFERED=1;FLASK_DEBUG=1;FLASK_ENV=development;NUMEXPR_MAX_THREADS=12
+- work dir：/Users/zhouhongtao/Desktop/code/dify-0.15.3/api
+- run param：run --port 5001 --host 0.0.0.0 --debug --with-threads
+- python debugger配置：![img_2.png](img_2.png)
