@@ -75,10 +75,10 @@ class Graph(BaseModel):
         node_configs = cast(list, node_configs)
 
         # reorganize edges mapping
-        edge_mapping: dict[str, list[GraphEdge]] = {}
-        reverse_edge_mapping: dict[str, list[GraphEdge]] = {}
+        edge_mapping: dict[str, list[GraphEdge]] = {}  #[source_node_id: [GraphEdge]]
+        reverse_edge_mapping: dict[str, list[GraphEdge]] = {}  #[target_node_id: [GraphEdge]]
         target_edge_ids = set()
-        fail_branch_source_node_id = [
+        fail_branch_source_node_id = [ #节点失败时的异常分支，如果节点失败，则跳转到这个节点
             node["id"] for node in node_configs if node["data"].get("error_strategy") == "fail-branch"
         ]
         for edge_config in edge_configs:
@@ -119,7 +119,7 @@ class Graph(BaseModel):
             reverse_edge_mapping[target_node_id].append(graph_edge)
 
         # fetch nodes that have no predecessor node
-        root_node_configs = []
+        root_node_configs = []  #所有的开始节点，包括外层开始节点、迭代中的开始节点、loop中的开始节点
         all_node_id_config_mapping: dict[str, dict] = {}
         for node_config in node_configs:
             node_id = node_config.get("id")
@@ -301,7 +301,7 @@ class Graph(BaseModel):
         """
         Recursively add parallel ids
 
-        :param edge_mapping: edge mapping
+        :param edge_mapping: edge mapping 
         :param start_node_id: start from node id
         :param parallel_mapping: parallel mapping
         :param node_parallel_mapping: node parallel mapping
