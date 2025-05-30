@@ -158,8 +158,8 @@ class Graph(BaseModel):
         node_id_config_mapping = {node_id: all_node_id_config_mapping[node_id] for node_id in node_ids}
 
         # init parallel mapping
-        parallel_mapping: dict[str, GraphParallel] = {}
-        node_parallel_mapping: dict[str, str] = {}
+        parallel_mapping: dict[str, GraphParallel] = {}  # [parallel_id: GraphParallel] {并行对象id:并行对象}
+        node_parallel_mapping: dict[str, str] = {} #[node_id: parallel_id] #并行块中的节点id所属的并行对象id
         cls._recursively_add_parallels(
             edge_mapping=edge_mapping,
             reverse_edge_mapping=reverse_edge_mapping,
@@ -291,12 +291,12 @@ class Graph(BaseModel):
     @classmethod
     def _recursively_add_parallels(
         cls,
-        edge_mapping: dict[str, list[GraphEdge]],
-        reverse_edge_mapping: dict[str, list[GraphEdge]],
-        start_node_id: str,
-        parallel_mapping: dict[str, GraphParallel],
-        node_parallel_mapping: dict[str, str],
-        parent_parallel: Optional[GraphParallel] = None,
+        edge_mapping: dict[str, list[GraphEdge]], #{"节点":[出边]}
+        reverse_edge_mapping: dict[str, list[GraphEdge]], #{"节点":[入边]}
+        start_node_id: str, # 当前递归的开始节点
+        parallel_mapping: dict[str, GraphParallel], # [parallel_id: GraphParallel] 已经递归出的{并行对象id:并行对象}
+        node_parallel_mapping: dict[str, str],# [node_id: parallel_id] #已递归出的节点id所属的并行对象id
+        parent_parallel: Optional[GraphParallel] = None, #父并行对象
     ) -> None:
         """
         Recursively add parallel ids
@@ -309,10 +309,10 @@ class Graph(BaseModel):
         """
         target_node_edges = edge_mapping.get(start_node_id, [])
         parallel = None
-        if len(target_node_edges) > 1:
+        if len(target_node_edges) > 1: #给定开始节点的出边数大于1，则需要处理并行分支
             # fetch all node ids in current parallels
-            parallel_branch_node_ids = defaultdict(list)
-            condition_edge_mappings = defaultdict(list)
+            parallel_branch_node_ids = defaultdict(list) # 各分支边的相同条件的hash值与这些边的连接的nodeids的映射 [condition_hash|"default": [node_id]]
+            condition_edge_mappings = defaultdict(list)  # 各分支边的相同条件的hash值与这些边的列表的映射 [condition_hash: [GraphEdge]]
             for graph_edge in target_node_edges:
                 if graph_edge.run_condition is None:
                     parallel_branch_node_ids["default"].append(graph_edge.target_node_id)
@@ -325,28 +325,28 @@ class Graph(BaseModel):
                     for graph_edge in graph_edges:
                         parallel_branch_node_ids[condition_hash].append(graph_edge.target_node_id)
 
-            condition_parallels = {}
+            condition_parallels = {} # [condition_hash: GraphParallel] 对应关系(条件hash: 并行对象: 并行对象的id=1:1:1)
             for condition_hash, condition_parallel_branch_node_ids in parallel_branch_node_ids.items():
                 # any target node id in node_parallel_mapping
-                parallel = None
-                if condition_parallel_branch_node_ids:
-                    parent_parallel_id = parent_parallel.id if parent_parallel else None
+                parallel = None #分支边条件hash相同的，归到一个并行对象
+                if condition_parallel_branch_node_ids: #当前边条件hash下（hash相同的归到一组），所有边的target nodeids（一级nodes）
+                    parent_parallel_id = parent_parallel.id if parent_parallel else None #parent_parallel:父并行的id
 
-                    parallel = GraphParallel(
+                    parallel = GraphParallel( #得到当前条件hash的并行对象，不过部分字段还未计算出来
                         start_from_node_id=start_node_id,
                         parent_parallel_id=parent_parallel.id if parent_parallel else None,
                         parent_parallel_start_node_id=parent_parallel.start_from_node_id if parent_parallel else None,
                     )
-                    parallel_mapping[parallel.id] = parallel
+                    parallel_mapping[parallel.id] = parallel #上下文设置 对应关系(条件hash: 并行对象: 并行对象的id=1:1:1)
                     condition_parallels[condition_hash] = parallel
 
-                    in_branch_node_ids = cls._fetch_all_node_ids_in_parallels(
-                        edge_mapping=edge_mapping,
-                        reverse_edge_mapping=reverse_edge_mapping,
-                        parallel_branch_node_ids=condition_parallel_branch_node_ids,
+                    in_branch_node_ids = cls._fetch_all_node_ids_in_parallels( # 一级节点id下的所有可达nodeids（包括他自己，但不包括叶子节点）。_fetch_all_node_ids_in_parallels比较复杂，先不细看
+                        edge_mapping=edge_mapping, #{"节点":[出边]}
+                        reverse_edge_mapping=reverse_edge_mapping, #{"节点":[入边]}
+                        parallel_branch_node_ids=condition_parallel_branch_node_ids, #当前边条件hash下，所有边的target nodeIds （一级nodes）
                     )
 
-                    # collect all branches node ids
+                    # collect all branches node ids 。注：嵌套情况下，节点既属于外层并行，也属于内层并行，但是节点最终被标记为属于最内层的并行对象
                     parallel_node_ids = []
                     for _, node_ids in in_branch_node_ids.items():
                         for node_id in node_ids:
@@ -360,14 +360,14 @@ class Graph(BaseModel):
 
                             if in_parent_parallel:
                                 parallel_node_ids.append(node_id)
-                                node_parallel_mapping[node_id] = parallel.id
+                                node_parallel_mapping[node_id] = parallel.id  #更新节点归属
 
                     outside_parallel_target_node_ids = set()
                     for node_id in parallel_node_ids:
                         if node_id == parallel.start_from_node_id:
                             continue
 
-                        node_edges = edge_mapping.get(node_id)
+                        node_edges = edge_mapping.get(node_id) #获取当前节点的所有出边
                         if not node_edges:
                             continue
 
@@ -375,7 +375,7 @@ class Graph(BaseModel):
                             continue
 
                         target_node_id = node_edges[0].target_node_id
-                        if target_node_id in parallel_node_ids:
+                        if target_node_id in parallel_node_ids: #获取并行块内有唯一出边且出边连接点不在并行块内的节点，作为块的结束点
                             continue
 
                         if parent_parallel_id:
@@ -551,19 +551,19 @@ class Graph(BaseModel):
     @classmethod
     def _fetch_all_node_ids_in_parallels(
         cls,
-        edge_mapping: dict[str, list[GraphEdge]],
-        reverse_edge_mapping: dict[str, list[GraphEdge]],
-        parallel_branch_node_ids: list[str],
+        edge_mapping: dict[str, list[GraphEdge]],#{"节点":[出边]}
+        reverse_edge_mapping: dict[str, list[GraphEdge]],#{"节点":[入边]}
+        parallel_branch_node_ids: list[str], #当前边条件hash下，所有边的target nodeIds （一级nodes）
     ) -> dict[str, list[str]]:
         """
         Fetch all node ids in parallels
         """
-        routes_node_ids: dict[str, list[str]] = {}
+        routes_node_ids: dict[str, list[str]] = {}  #1、一级子节点和他下面的所有子节点（包括他自己，但不包括叶子节点）
         for parallel_branch_node_id in parallel_branch_node_ids:
             routes_node_ids[parallel_branch_node_id] = [parallel_branch_node_id]
 
             # fetch routes node ids
-            cls._recursively_fetch_routes(
+            cls._recursively_fetch_routes(   #递归遍历所有子节点，一直持续到叶子节点
                 edge_mapping=edge_mapping,
                 start_node_id=parallel_branch_node_id,
                 routes_node_ids=routes_node_ids[parallel_branch_node_id],
@@ -661,10 +661,10 @@ class Graph(BaseModel):
         """
         Recursively fetch route
         """
-        if start_node_id not in edge_mapping:
+        if start_node_id not in edge_mapping: #当前迭代节点没有出边时，跳出递归
             return
 
-        for graph_edge in edge_mapping[start_node_id]:
+        for graph_edge in edge_mapping[start_node_id]: #遍历当前节点的所有出边
             # find next node ids
             if graph_edge.target_node_id not in routes_node_ids:
                 routes_node_ids.append(graph_edge.target_node_id)
