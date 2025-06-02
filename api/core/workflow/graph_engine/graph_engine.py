@@ -220,16 +220,16 @@ class GraphEngine:
         self,
         start_node_id: str,
         in_parallel_id: Optional[str] = None,
-        parent_parallel_id: Optional[str] = None,
-        parent_parallel_start_node_id: Optional[str] = None,
+        parent_parallel_id: Optional[str] = None, #父并行块id
+        parent_parallel_start_node_id: Optional[str] = None, #父并行块开始节点
         handle_exceptions: list[str] = [],
     ) -> Generator[GraphEngineEvent, None, None]:
-        parallel_start_node_id = None
+        parallel_start_node_id = None #当前并行块的开始节点
         if in_parallel_id:
             parallel_start_node_id = start_node_id
 
         next_node_id = start_node_id
-        previous_route_node_state: Optional[RouteNodeState] = None
+        previous_route_node_state: Optional[RouteNodeState] = None #上一个节点的状态
         while True:
             # max steps reached
             if self.graph_runtime_state.node_run_steps > self.max_execution_steps:
