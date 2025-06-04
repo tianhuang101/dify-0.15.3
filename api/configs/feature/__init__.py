@@ -423,7 +423,8 @@ class WorkflowConfig(BaseSettings):
 
     WORKFLOW_MAX_EXECUTION_TIME: PositiveInt = Field(
         description="Maximum execution time in seconds for a single workflow",
-        default=1200,
+        # default=1200,
+        default=120000,
     )
 
     WORKFLOW_CALL_MAX_DEPTH: PositiveInt = Field(
