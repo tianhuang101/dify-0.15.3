@@ -242,7 +242,7 @@ class GraphEngine:
                 raise GraphRunFailedError("Max execution time {}s reached.".format(self.max_execution_time))
 
             # init route node state
-            route_node_state = self.graph_runtime_state.node_run_state.create_node_state(node_id=next_node_id)
+            route_node_state = self.graph_runtime_state.nodes_run_state.create_node_state(node_id=next_node_id)
 
             # get node config
             node_id = route_node_state.node_id
@@ -287,11 +287,11 @@ class GraphEngine:
 
                     yield item
 
-                self.graph_runtime_state.node_run_state.node_state_mapping[route_node_state.id] = route_node_state
+                self.graph_runtime_state.nodes_run_state.node_state_mapping[route_node_state.id] = route_node_state
 
                 # append route
                 if previous_route_node_state:
-                    self.graph_runtime_state.node_run_state.add_route(
+                    self.graph_runtime_state.nodes_run_state.add_route(
                         source_node_state_id=previous_route_node_state.id, target_node_state_id=route_node_state.id
                     )
             except Exception as e:

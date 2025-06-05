@@ -23,5 +23,5 @@ class GraphRuntimeState(BaseModel):
     node_run_steps: int = 0
     """node run steps"""
 
-    node_run_state: RuntimeRouteState = RuntimeRouteState()
+    nodes_run_state: RuntimeRouteState = RuntimeRouteState()
     """node run state"""
